@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+		  "label": "kmod: build",
+		  "type": "shell",
+		  "command": "make",
+		  "group": { "kind": "build", "isDefault": true },
+		  "problemMatcher": ["$gcc"],
+		  "detail": "CMake template build task"
+		},
+ 		{
+    	  "label": "kmod: clean",
+    	  "type": "shell",
+    	  "command": "make clean",
+    	  "problemMatcher": ["$gcc"],
+    	  "detail": "Clean external module artifacts from ./build"
+    	},
+    	{
+    	  "label": "kmod: gen compile_commands.json (from ./build)",
+    	  "type": "shell",
+    	  "command": "python3 '${input:KDIR}/scripts/clang-tools/gen_compile_commands.py' -d '${workspaceFolder}/build'",
+    	  "problemMatcher": []
+    	},
+		{
+  		  "label": "kmod: build + ccdb",
+  		  "dependsOn": ["kmod: build", "kmod: gen compile_commands.json (from ./build)"],
+  		  "group": "build",
+  		  "detail": "Build, then regenerate compile_commands.json for IntelliSense/clangd"
+  		}
+	],
+	"inputs": [
+		{
+			"id": "KDIR",
+			"type": "promptString",
+			"description": "Path to kernel headers",
+			"default": "~/ds918p-pve/linux-headers-6.14.11-4-pve"
+		}
+	]
+}
