@@ -3,7 +3,7 @@ CC := gcc-14
 
 ifneq ($(KERNELRELEASE),)
 
-obj-m += hello-1.o
+obj-m += power-led.o
 
 else
 
