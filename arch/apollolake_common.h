@@ -10,16 +10,20 @@
  * West 155~201;
  * SouthWest 202~244;
  */
-#define SZ_UART_CMD_PREFIX         "-"
-#define SZ_UART_ALARM_LED_ON       "LA1"
-#define SZ_UART_ALARM_LED_BLINKING "LA2"
-#define SZ_UART_ALARM_LED_OFF      "LA3"
-#define SZ_UART_FAN_DUTY_CYCLE     "V"
-#define SZ_UART_FAN_FREQUENCY      "W"
-#define SZ_UART_CPUFAN_DUTY_CYCLE  "X"
-#define SZ_UART_CPUFAN_FREQUENCY   "Y"
-#define SZ_UART_PWR_LED_ON         "4"
-#define SZ_UART_PWR_LED_OFF        "6"
+#define SZ_UART_CMD_PREFIX              "-"
+#define SZ_UART_ALARM_LED_ON            "LA1"
+#define SZ_UART_ALARM_LED_BLINKING      "LA2"
+#define SZ_UART_ALARM_LED_OFF           "LA3"
+#define SZ_UART_FAN_DUTY_CYCLE          "V"
+#define SZ_UART_FAN_FREQUENCY           "W"
+#define SZ_UART_CPUFAN_DUTY_CYCLE       "X"
+#define SZ_UART_CPUFAN_FREQUENCY        "Y"
+#define SZ_UART_PWR_LED_ON              "4"
+#define SZ_UART_PWR_LED_BLINK           "5"
+#define SZ_UART_PWR_LED_OFF             "6"
+#define SZ_UART_STATUS_LED_OFF          "7"
+#define SZ_UART_STATUS_LED_ON           "8"
+#define SZ_UART_STATUS_LED_BLINK        "9"
 
 #include <linux/gpio/machine.h>
 
