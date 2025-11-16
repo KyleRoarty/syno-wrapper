@@ -1,0 +1,97 @@
+#include <linux/serdev.h>
+#include <linux/acpi.h>
+
+#include "power_led_common.h"
+
+struct syno_wrapper_uart {
+	struct serdev_device *serdev;
+	struct syno_wrapper *priv;
+};
+
+static int wrapper_uart_write(struct syno_wrapper *dev, const u8 *cmd) {
+	struct syno_wrapper_uart *uart = dev->phy;
+	u8 cmdbuf[32] = {0};
+	// Could check for null here but yolo
+	snprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
+
+	printk(KERN_INFO "uart command: %s\n", cmdbuf);
+
+    int err = serdev_device_write(uart->serdev, cmdbuf,
+		sizeof(cmdbuf), 0);
+	return err;
+	if (err < 0) {
+		return err;
+	}
+	// Potentially do something here before returning
+	// pn533 does something with a timer
+	return 0;
+}
+
+static const struct wrapper_phy_ops uart_ops = {
+	.send_cmd = wrapper_uart_write,
+};
+
+static size_t wrapper_uart_receive(struct serdev_device *serdev, const u8 *buffer, size_t size)
+{
+	printk(KERN_INFO "serdev echo: received %ld bytes with '%s'\n", size, buffer);
+	return size;
+}
+
+static const struct serdev_device_ops serdev_ops = {
+	.receive_buf = wrapper_uart_receive,
+	.write_wakeup = serdev_device_write_wakeup,
+};
+
+static int wrapper_uart_probe(struct serdev_device *serdev)
+{
+	printk(KERN_INFO "In probe for serdev\n");
+	struct syno_wrapper_uart *wrapper;
+	struct syno_wrapper *priv;
+
+	wrapper = kzalloc(sizeof(*wrapper), GFP_KERNEL);
+
+	wrapper->serdev = serdev;
+	serdev_device_set_drvdata(serdev, wrapper);
+	serdev_device_set_client_ops(serdev, &serdev_ops);
+	int status = serdev_device_open(serdev);
+	if (status)
+	{
+		printk(KERN_INFO "serdev probe: error when opening serial device\n");
+		return -1;
+	}
+
+	serdev_device_set_baudrate(serdev, 9600);
+	serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
+	serdev_device_set_flow_control(serdev, false);
+
+	priv = power_led_common_init(wrapper,
+		&uart_ops, &wrapper->serdev->dev);
+	wrapper->priv = priv;
+	return 0;
+}
+
+static void wrapper_uart_remove(struct serdev_device *serdev) {
+	struct syno_wrapper_uart *uart = serdev_device_get_drvdata(serdev);
+	power_led_common_cleanup(uart->priv);
+	serdev_device_close(serdev);
+	kfree(uart);
+}
+
+static const struct acpi_device_id uart_acpi_ids[] = {
+	{"TST0001", 0},
+	{}
+};
+MODULE_DEVICE_TABLE(acpi, uart_acpi_ids);
+
+static struct serdev_device_driver uart_driver = {
+	.driver =
+		{
+			.name = "syno-wrap",
+			.acpi_match_table = uart_acpi_ids,
+		},
+	.probe = wrapper_uart_probe,
+	.remove = wrapper_uart_remove
+};
+module_serdev_device_driver(uart_driver);
+
+MODULE_LICENSE("GPL");

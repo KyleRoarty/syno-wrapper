@@ -3,7 +3,10 @@ CC := gcc-14
 
 ifneq ($(KERNELRELEASE),)
 
-obj-m += power-led.o
+power_led_uart-objs = power_led_common.o uart.o
+
+obj-m += power_led_uart.o
+
 
 else
 
