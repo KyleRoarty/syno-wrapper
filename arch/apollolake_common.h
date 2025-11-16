@@ -1,3 +1,4 @@
+#pragma once
 /*
  * Apollo Lake has 4 GPIO controllers with different number of pins which are loosely arranged.
  * We hard-coded the base offsets of these controllers so the GPIO number can be determined at static time,
@@ -22,7 +23,7 @@
 
 #include <linux/gpio/machine.h>
 
-struct gpiod_lookup_table apollolake_gpios_table = {
+static struct gpiod_lookup_table apollolake_gpios_table = {
     .dev_id = NULL,
     .table = {
         GPIO_LOOKUP("INT3452:00", 12, "power-led", GPIO_ACTIVE_HIGH),
