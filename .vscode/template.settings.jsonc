@@ -1,0 +1,10 @@
+{
+    // Host where the module will be installed
+    "host": "",
+    // Path where you want the module to be copied to
+    "hostPath": "",
+    // Kernel files directory
+    "KDIR": "",
+    // Self-explanatory
+    "moduleName": ""
+}

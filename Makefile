@@ -1,4 +1,6 @@
-KDIR ?= ~/ds918p-pve/linux-headers-6.14.11-4-pve
+# Will pick modules from your kernel if you don't
+# override KDIR in tasks.json (done automatically)
+KDIR ?= /lib/modules/$(uname -r)/build
 CC := gcc-14
 
 ifneq ($(KERNELRELEASE),)

@@ -1,40 +1,64 @@
 {
+	// Copy template.settings.jsonc to settings.json
+	// (Or just add the content to existing settings.json)
+	// And define the variables in there
 	"version": "2.0.0",
 	"tasks": [
 		{
-		  "label": "kmod: build",
-		  "type": "shell",
-		  "command": "make",
-		  "group": { "kind": "build", "isDefault": true },
-		  "problemMatcher": ["$gcc"],
-		  "detail": "CMake template build task"
+			"label": "build",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"KDIR=${config:KDIR}"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"detail": "CMake template build task"
 		},
- 		{
-    	  "label": "kmod: clean",
-    	  "type": "shell",
-    	  "command": "make clean",
-    	  "problemMatcher": ["$gcc"],
-    	  "detail": "Clean external module artifacts from ./build"
-    	},
-    	{
-    	  "label": "kmod: gen compile_commands.json (from ./build)",
-    	  "type": "shell",
-    	  "command": "python3 '${input:KDIR}/scripts/clang-tools/gen_compile_commands.py' -d '${workspaceFolder}/build'",
-    	  "problemMatcher": []
-    	},
 		{
-  		  "label": "kmod: build + ccdb",
-  		  "dependsOn": ["kmod: build", "kmod: gen compile_commands.json (from ./build)"],
-  		  "group": "build",
-  		  "detail": "Build, then regenerate compile_commands.json for IntelliSense/clangd"
-  		}
-	],
-	"inputs": [
+			"label": "clean",
+			"type": "shell",
+			"command": "make clean",
+			"problemMatcher": [
+				"$gcc"
+			],
+			"detail": "Clean external module artifacts from ./build"
+		},
 		{
-			"id": "KDIR",
-			"type": "promptString",
-			"description": "Path to kernel headers",
-			"default": "~/ds918p-pve/linux-headers-6.14.11-4-pve"
+			"label": "gen compile_commands.json",
+			"type": "shell",
+			"command": "python3 '${config:KDIR}/scripts/clang-tools/gen_compile_commands.py' -d '${workspaceFolder}/build'",
+			"problemMatcher": []
+		},
+		{
+			"label": "scp",
+			"type": "shell",
+			"command": "scp -O ${workspaceFolder}/build/${config:moduleName} ${config:host}:${config:hostPath}",
+			"detail": "scp's the module to the host you're using the module on"
+		},
+		{
+			"label": "build + compile_commands",
+			"dependsOn": [
+				"build",
+				"gen compile_commands.json"
+			],
+			"dependsOrder": "sequence",
+			"group": "build",
+			"detail": "Build, then regenerate compile_commands.json for IntelliSense/clangd"
+		},
+		{
+			"label": "build + scp",
+			"dependsOn": [
+				"build",
+				"scp"
+			],
+			"dependsOrder": "sequence",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Build, then scp module"
 		}
 	]
 }
