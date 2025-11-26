@@ -1,5 +1,6 @@
 #pragma once
 #include <linux/device.h>
+#include <linux/miscdevice.h>
 
 struct syno_wrapper {
     struct device *dev;
@@ -7,7 +8,7 @@ struct syno_wrapper {
     const struct wrapper_phy_ops *phy_ops;
 
     struct workqueue_struct *wq;
-    struct delayed_work periodic_work;
+    struct miscdevice wrapper_misc;
 };
 
 struct wrapper_phy_ops {

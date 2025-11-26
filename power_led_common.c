@@ -5,43 +5,60 @@
 #include "arch/apollolake_common.h"
 #include "power_led_common.h"
 
-#define INTERVAL 1000
+struct uart_job {
+	struct work_struct work;
+	struct syno_wrapper *dev;
+	u8 cmdBuf[UART2_CMD_MAX_LENGTH+1];
+};
 
 static void light_state_toggle(struct work_struct *work) {
+	struct uart_job *job = container_of(work, struct uart_job, work);
 	printk(KERN_INFO "In light state toggle\n");
-	static int light_state = 0;
-	struct syno_wrapper *dev = container_of(work, struct syno_wrapper,
-		periodic_work.work);
 
-	u8 *cmd = NULL; 
-
-	switch (light_state)
-	{
-	case 0:
-		cmd = "4";
-		break;
-	case 1:
-		cmd = "5";
-		break;
-	case 2:
-		cmd = "6";
-		break;
-	default:
-		printk(KERN_INFO "Somehow outside the state bounds\n");
-	 	return;
-	}
-
-	printk(KERN_INFO "cmd: %s\n", cmd);
-
-	//light_state = (light_state + 1) % 3;
-
-	int ret = dev->phy_ops->send_cmd(dev, cmd);
+	int ret = job->dev->phy_ops->send_cmd(job->dev, job->cmdBuf);
 
 	printk(KERN_INFO "Return value: %d\n", ret);
 
-	//queue_delayed_work(dev->wq, &dev->periodic_work,
-	//	msecs_to_jiffies(INTERVAL));
+	kfree(job);
 }
+
+static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t count, loff_t * ppos)
+{
+	// I think this is correct?
+	struct syno_wrapper *priv = container_of(file->private_data, struct syno_wrapper, wrapper_misc);
+	struct uart_job *job;
+
+	if (count > UART2_CMD_MAX_LENGTH) {
+		printk(KERN_INFO "Too much data - ignoring\n");
+		*ppos += count;
+		return count;
+	}
+
+	job = kmalloc(sizeof(*job), GFP_KERNEL);
+	if (!job) {
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(job->cmdBuf, buf, count)) {
+		return -EFAULT;
+	}
+
+	job->cmdBuf[count] = '\0';
+	printk(KERN_INFO "Received: %s\n", job->cmdBuf);
+
+	job->dev = priv;
+	INIT_WORK(&job->work, light_state_toggle);
+
+	queue_work(priv->wq, &job->work);
+
+	*ppos += count;
+	return count;
+}
+
+static const struct file_operations wrapper_fops = {
+	.owner = THIS_MODULE,
+	.write = wrapper_write
+};
 
 struct syno_wrapper *power_led_common_init(void *phy,
 	const struct wrapper_phy_ops *phy_ops,
@@ -57,14 +74,23 @@ struct syno_wrapper *power_led_common_init(void *phy,
 	priv->phy = phy;
 	priv->phy_ops = phy_ops;
 
-	INIT_DELAYED_WORK(&priv->periodic_work, light_state_toggle);
-	priv->wq = alloc_ordered_workqueue("syno_wrapper", 0);
+	priv->wq = alloc_ordered_workqueue("syno_wrapper", WQ_MEM_RECLAIM);
 	if (priv->wq == NULL) {
 		return ERR_PTR(-ENOMEM);
 	}
 
-	queue_delayed_work(priv->wq, &priv->periodic_work,
-		msecs_to_jiffies(INTERVAL));
+	priv->wrapper_misc.minor = MISC_DYNAMIC_MINOR;
+	priv->wrapper_misc.name = "syno_wrapper";
+	priv->wrapper_misc.fops = &wrapper_fops;
+	priv->wrapper_misc.mode = 0220; //ww-
+
+	int result;
+	result = misc_register(&priv->wrapper_misc);
+	if (result) {
+		destroy_workqueue(priv->wq);
+		kfree(priv);
+		return ERR_PTR(result);
+	}
 
 	gpiod_add_lookup_table(&apollolake_gpios_table);
 
@@ -79,7 +105,9 @@ EXPORT_SYMBOL_GPL(power_led_common_init);
 
 void power_led_common_cleanup(struct syno_wrapper *priv)
 {
-	cancel_delayed_work_sync(&priv->periodic_work);
+	misc_deregister(&priv->wrapper_misc);
+
+	flush_workqueue(priv->wq);
 	destroy_workqueue(priv->wq);
 	//gpiod_set_value_cansleep(power, 1);
 	//gpiod_put(power);
