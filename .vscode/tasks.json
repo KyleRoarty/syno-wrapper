@@ -19,7 +19,11 @@
 		{
 			"label": "clean",
 			"type": "shell",
-			"command": "make clean",
+			"command": "make",
+			"args": [
+				"KDIR=${config:KDIR}",
+				"clean"
+			],
 			"problemMatcher": [
 				"$gcc"
 			],
