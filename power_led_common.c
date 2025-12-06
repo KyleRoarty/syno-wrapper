@@ -8,7 +8,7 @@
 struct uart_job {
 	struct work_struct work;
 	struct syno_wrapper *dev;
-	u8 cmdBuf[UART2_CMD_MAX_LENGTH+1];
+	u8 cmdBuf[SZ_UART_MAX_LENGTH+1];
 };
 
 static void light_state_toggle(struct work_struct *work) {
@@ -16,8 +16,6 @@ static void light_state_toggle(struct work_struct *work) {
 	printk(KERN_INFO "In light state toggle\n");
 
 	int ret = job->dev->phy_ops->send_cmd(job->dev, job->cmdBuf);
-
-	printk(KERN_INFO "Return value: %d\n", ret);
 
 	kfree(job);
 }
@@ -28,7 +26,7 @@ static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t 
 	struct syno_wrapper *priv = container_of(file->private_data, struct syno_wrapper, wrapper_misc);
 	struct uart_job *job;
 
-	if (count > UART2_CMD_MAX_LENGTH) {
+	if (count > SZ_UART_MAX_LENGTH+1) {
 		printk(KERN_INFO "Too much data - ignoring\n");
 		*ppos += count;
 		return count;

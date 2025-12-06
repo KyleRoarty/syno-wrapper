@@ -33,7 +33,11 @@ static const struct wrapper_phy_ops uart_ops = {
 
 static size_t wrapper_uart_receive(struct serdev_device *serdev, const u8 *buffer, size_t size)
 {
-	printk(KERN_INFO "serdev echo: received %ld bytes with '%s'\n", size, buffer);
+	printk(KERN_INFO "serdev echo: received %ld bytes: ", size);
+	for (int i = 0; i < size; i++) {
+		printk(KERN_CONT "0x%02X ", buffer[i]);
+	}
+	printk(KERN_CONT "\n");
 	return size;
 }
 

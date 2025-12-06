@@ -10,20 +10,51 @@
  * West 155~201;
  * SouthWest 202~244;
  */
-#define SZ_UART_CMD_PREFIX              "-"
-#define SZ_UART_ALARM_LED_ON            "LA1"
-#define SZ_UART_ALARM_LED_BLINKING      "LA2"
-#define SZ_UART_ALARM_LED_OFF           "LA3"
-#define SZ_UART_FAN_DUTY_CYCLE          "V"
-#define SZ_UART_FAN_FREQUENCY           "W"
-#define SZ_UART_CPUFAN_DUTY_CYCLE       "X"
-#define SZ_UART_CPUFAN_FREQUENCY        "Y"
-#define SZ_UART_PWR_LED_ON              "4"
-#define SZ_UART_PWR_LED_BLINK           "5"
-#define SZ_UART_PWR_LED_OFF             "6"
-#define SZ_UART_STATUS_LED_OFF          "7"
-#define SZ_UART_STATUS_LED_ON           "8"
-#define SZ_UART_STATUS_LED_BLINK        "9"
+
+// On DS918+:
+// '-' doesn't do anything
+// 'L' and 'E' are multi-byte commands that do nothing
+// CPUFAN commands (X, Y) don't do anything as there's no CPU fan
+// 'M' doesn't do anything. It allegedly toggles which LED is being controlled
+// 'R' doesn't do anything. Allegedly "Get unique CMD"
+
+#define SZ_UART_POWER_OFF                   0x31 // "1"
+#define SZ_UART_BUZZER_SHORT                0x32 // "2"
+#define SZ_UART_BUZZER_LONG                 0x33 // "3"
+#define SZ_UART_PWR_LED_ON                  0x34 // "4"
+#define SZ_UART_PWR_LED_BLINK               0x35 // "5"
+#define SZ_UART_PWR_LED_OFF                 0x36 // "6"
+#define SZ_UART_STATUS_LED_OFF              0x37 // "7"
+#define SZ_UART_STATUS_LED_ON               0x38 // "8"
+#define SZ_UART_STATUS_LED_BLINK            0x39 // "9"
+#define SZ_UART_USB_LED_ON                  0x40
+#define SZ_UART_USB_LED_BLINK               0x41
+#define SZ_UART_USB_LED_OFF                 0x42
+
+#define SZ_UART_STARTUP                     0x43 // Makes the power LED blink and fans spin up faster like on startup
+#define SZ_UART_OUTPUT_STUFF_TOGGLE         0x4f // "O" // Toggles returning data from the UART?
+
+#define SZ_UART_LED_MIRROR_AB               0x54
+#define SZ_UART_TOGGLE_FAN_RPS_REPORT       0x55 /* 'U' */
+#define SZ_UART_FAN_DUTY_CYCLE              0x56 // "V" + %02d
+#define SZ_UART_FAN_FREQUENCY               0x57 // "W" + %02d
+
+#define SZ_UART_BUTTON_USB                  0x60 // '`'
+#define SZ_UART_BUTTON_RESET                0x61 // 'a'
+// control by up, must echo u first! uP #1
+#define SZ_UART_FAN_FAILURE                 0x66 /* 'f' */
+// control by up, must echo EC1 first! uP #17
+#define SZ_UART_CPUFAN_FAILURE              0x67 /* 'g' */
+#define SZ_UART_UNKNOWN                     0x6f // 'o' // Something else with data return toggling
+#define SZ_UART_RCPOWEROFF                  0x70 // 'p'
+#define SZ_UART_RCPOWERON                   0x71 // 'q'
+#define SZ_UART_DISABLE_SCHEDULE_POWERON    0x72 // 'r'
+#define SZ_UART_ENABLE_SCHEDULE_POWERON     0x73 // 's'
+#define SZ_UART_DISABLE_FANCHECK            0x74 // 't'
+#define SZ_UART_ENABLE_FANCHECK             0x75 // 'u'
+#define SZ_UART_SOME_MULTIBYTE              0x76 // 'v' 4 character multi-byte command `vNNN`
+#define SZ_UART_WOL_ENABLE                  0x6C // "l"
+#define SZ_UART_MAX_LENGTH                  4
 
 #include <linux/gpio/machine.h>
 
