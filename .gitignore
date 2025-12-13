@@ -2,3 +2,6 @@ build/
 compile_commands.json
 .vscode/settings.json
 kmod.code-workspace
+.config
+include/config/*
+include/generated/*

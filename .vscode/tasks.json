@@ -30,6 +30,24 @@
 			"detail": "Clean external module artifacts from ./build"
 		},
 		{
+			"label": "menuconfig",
+			"type": "shell",
+			"command": "kconfig-mconf Kconfig",
+			"detail": "Makes out-of-tree .config",
+			"problemMatcher": []
+		},
+		{
+			"label": "generate autoconf.h",
+			"type": "shell",
+			"command": [
+				"mkdir -p include/generated;",
+				"mkdir -p include/config;",
+				"kconfig-conf --silentoldconfig Kconfig"
+			],
+			"detail": "Generates header that defines CONFIG_<options>",
+			"problemMatcher": []
+		},
+		{
 			"label": "gen compile_commands.json",
 			"type": "shell",
 			"command": "python3 '${config:KDIR}/scripts/clang-tools/gen_compile_commands.py' -d '${workspaceFolder}/build'",

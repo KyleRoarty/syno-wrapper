@@ -1,7 +1,7 @@
 #include <linux/serdev.h>
 #include <linux/acpi.h>
 
-#include "power_led_common.h"
+#include "include/power_led_common.h"
 
 struct syno_wrapper_uart {
 	struct serdev_device *serdev;

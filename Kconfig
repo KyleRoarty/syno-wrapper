@@ -1,0 +1,26 @@
+mainmenu "Synology Wrapper options"
+
+config SYNO_WRAPPER
+    tristate
+    help
+        Wrapper for Synology devices not running DSM
+
+        Currently written for DS918+
+
+config SYNO_WRAPPER_UART
+    tristate "Synology Wrapper UART support"
+    #depends on SERIAL_DEV_BUS
+    select SYNO_WRAPPER
+    help
+        Enables UART interface for Synology devices.
+
+        Replaces the old file I/O method Synology uses.
+
+config SYNO_WRAPPER_FANCTL
+    tristate "Fan controller for Synology Wrapper"
+    depends on SYNO_WRAPPER
+    help
+        Enables fan control for Synology devices.
+
+        Fan curve is currently hard-coded and uses
+        the acpi temp sensor, not the core package temp.

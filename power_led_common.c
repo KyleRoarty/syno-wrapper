@@ -3,7 +3,8 @@
 #include <linux/gpio/consumer.h>
 
 #include "arch/apollolake_common.h"
-#include "power_led_common.h"
+#include "include/power_led_common.h"
+#include "include/fanctl.h"
 
 struct uart_job {
 	struct work_struct work;
@@ -91,6 +92,10 @@ struct syno_wrapper *power_led_common_init(void *phy,
 	}
 
 	gpiod_add_lookup_table(&apollolake_gpios_table);
+
+	// Testing that CONFIG_XXX is tracked when building
+	// Doesn't do anything yet
+	enable_fanctrl();
 
 	return priv;
 
