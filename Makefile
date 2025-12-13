@@ -12,11 +12,11 @@ endif
 # Needed for #ifdef checks on CONFIG_XXX
 ccflags-y += -include $(src)/include/generated/autoconf.h
 
-power_led_uart-y := power_led_common.o
-power_led_uart-$(CONFIG_SYNO_WRAPPER_UART) += uart.o
-power_led_uart-$(CONFIG_SYNO_WRAPPER_FANCTL) += fanctl.o
+syno_wrapper-y := syno_wrapper_common.o
+syno_wrapper-$(CONFIG_SYNO_WRAPPER_UART) += uart.o
+syno_wrapper-$(CONFIG_SYNO_WRAPPER_FANCTL) += fanctl.o
 
-obj-m += power_led_uart.o
+obj-m += syno_wrapper.o
 
 else
 

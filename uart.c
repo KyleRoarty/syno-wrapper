@@ -1,7 +1,7 @@
 #include <linux/serdev.h>
 #include <linux/acpi.h>
 
-#include "include/power_led_common.h"
+#include "include/syno_wrapper_common.h"
 
 struct syno_wrapper_uart {
 	struct serdev_device *serdev;
@@ -68,7 +68,7 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
 	serdev_device_set_flow_control(serdev, false);
 
-	priv = power_led_common_init(wrapper,
+	priv = syno_wrapper_common_init(wrapper,
 		&uart_ops, &wrapper->serdev->dev);
 	wrapper->priv = priv;
 	return 0;
@@ -76,7 +76,7 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 
 static void wrapper_uart_remove(struct serdev_device *serdev) {
 	struct syno_wrapper_uart *uart = serdev_device_get_drvdata(serdev);
-	power_led_common_cleanup(uart->priv);
+	syno_wrapper_common_cleanup(uart->priv);
 	serdev_device_close(serdev);
 	kfree(uart);
 }

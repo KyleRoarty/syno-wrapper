@@ -3,7 +3,7 @@
 #include <linux/gpio/consumer.h>
 
 #include "arch/apollolake_common.h"
-#include "include/power_led_common.h"
+#include "include/syno_wrapper_common.h"
 #include "include/fanctl.h"
 
 struct uart_job {
@@ -12,7 +12,7 @@ struct uart_job {
 	u8 cmdBuf[SZ_UART_MAX_LENGTH+1];
 };
 
-static void light_state_toggle(struct work_struct *work) {
+static void send_command(struct work_struct *work) {
 	struct uart_job *job = container_of(work, struct uart_job, work);
 	printk(KERN_INFO "In light state toggle\n");
 
@@ -46,7 +46,7 @@ static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t 
 	printk(KERN_INFO "Received: %s\n", job->cmdBuf);
 
 	job->dev = priv;
-	INIT_WORK(&job->work, light_state_toggle);
+	INIT_WORK(&job->work, send_command);
 
 	queue_work(priv->wq, &job->work);
 
@@ -59,7 +59,7 @@ static const struct file_operations wrapper_fops = {
 	.write = wrapper_write
 };
 
-struct syno_wrapper *power_led_common_init(void *phy,
+struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	const struct wrapper_phy_ops *phy_ops,
 	struct device *dev)
 {
@@ -104,9 +104,9 @@ struct syno_wrapper *power_led_common_init(void *phy,
 
 	return priv;
 }
-EXPORT_SYMBOL_GPL(power_led_common_init);
+EXPORT_SYMBOL_GPL(syno_wrapper_common_init);
 
-void power_led_common_cleanup(struct syno_wrapper *priv)
+void syno_wrapper_common_cleanup(struct syno_wrapper *priv)
 {
 	misc_deregister(&priv->wrapper_misc);
 
@@ -118,6 +118,6 @@ void power_led_common_cleanup(struct syno_wrapper *priv)
 	kfree(priv);
 	printk(KERN_INFO "Goodbye world 1.\n");
 }
-EXPORT_SYMBOL_GPL(power_led_common_cleanup);
+EXPORT_SYMBOL_GPL(syno_wrapper_common_cleanup);
 
 MODULE_LICENSE("GPL");
