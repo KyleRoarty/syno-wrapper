@@ -116,7 +116,7 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	// Testing that CONFIG_XXX is tracked when building
 	// Doesn't do anything yet
 	struct fan_ctrl *wrapper_fc = fanctrl_create(
-		(void *)priv, &wrapper_fc_ops, &ds918_curve, "acpitz");
+		(void *)priv, &wrapper_fc_ops, &ds918_curve, ds918_tz);
 
 	if (wrapper_fc == NULL) {
 		misc_deregister(&priv->wrapper_misc);

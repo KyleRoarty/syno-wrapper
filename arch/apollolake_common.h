@@ -107,3 +107,5 @@ static const struct fan_curve ds918_curve = {
     .points = ds918_points,
     .num_points = ARRAY_SIZE(ds918_points),
 };
+
+static const char ds918_tz[] = "acpitz";
