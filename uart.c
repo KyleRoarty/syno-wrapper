@@ -8,11 +8,12 @@ struct syno_wrapper_uart {
 	struct syno_wrapper *priv;
 };
 
-static int wrapper_uart_write(struct syno_wrapper *dev, const u8 *cmd) {
+static int wrapper_uart_write(void *dev, const u8 *cmd)
+{
 	struct syno_wrapper_uart *uart = dev->phy;
 	u8 cmdbuf[32] = {0};
 	// Could check for null here but yolo
-	snprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
+	scnprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
 
 	// Might want to comment out if the fan ctrl
 	// messages pollute this too much
@@ -21,9 +22,8 @@ static int wrapper_uart_write(struct syno_wrapper *dev, const u8 *cmd) {
     int err = serdev_device_write(uart->serdev, cmdbuf,
 		sizeof(cmdbuf), 0);
 	return err;
-	if (err < 0) {
+	if (err < 0)
 		return err;
-	}
 	// Potentially do something here before returning
 	// pn533 does something with a timer
 	return 0;
@@ -36,9 +36,8 @@ static const struct wrapper_phy_ops uart_ops = {
 static size_t wrapper_uart_receive(struct serdev_device *serdev, const u8 *buffer, size_t size)
 {
 	pr_info("serdev echo: received %ld bytes: ", size);
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < size; i++)
 		pr_cont("0x%02X ", buffer[i]);
-	}
 	pr_cont("\n");
 	return size;
 }
@@ -76,7 +75,8 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	return 0;
 }
 
-static void wrapper_uart_remove(struct serdev_device *serdev) {
+static void wrapper_uart_remove(struct serdev_device *serdev)
+{
 	struct syno_wrapper_uart *uart = serdev_device_get_drvdata(serdev);
 	syno_wrapper_common_cleanup(uart->priv);
 	serdev_device_close(serdev);

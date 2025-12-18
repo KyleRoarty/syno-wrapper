@@ -12,7 +12,8 @@ struct uart_job {
 	u8 cmdBuf[SZ_UART_MAX_LENGTH+1];
 };
 
-static void send_command(struct work_struct *work) {
+static void send_command(struct work_struct *work)
+{
 	struct uart_job *job = container_of(work, struct uart_job, work);
 
 	int ret = job->dev->phy_ops->send_cmd(job->dev, job->cmdBuf);
@@ -33,13 +34,11 @@ static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t 
 	}
 
 	job = kmalloc(sizeof(*job), GFP_KERNEL);
-	if (!job) {
+	if (!job)
 		return -ENOMEM;
-	}
 
-	if (copy_from_user(job->cmdBuf, buf, count)) {
+	if (copy_from_user(job->cmdBuf, buf, count))
 		return -EFAULT;
-	}
 
 	job->cmdBuf[count] = '\0';
 	pr_info("Received: %s\n", job->cmdBuf);
@@ -60,7 +59,7 @@ static const struct file_operations wrapper_fops = {
 
 static int write_fan(void *priv, const u8 fan_pct)
 {
-	struct syno_wrapper *this = (struct syno_wrapper *)priv;
+	struct syno_wrapper *this = priv;
 
 	if (fan_pct > 99)
 		return 1;
@@ -90,17 +89,16 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 {
 	struct syno_wrapper *priv;
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-	if (priv == NULL) {
+	if (priv == NULL)
 		return ERR_PTR(-ENOMEM);
-	}
+
 	priv->dev = dev;
 	priv->phy = phy;
 	priv->phy_ops = phy_ops;
 
 	priv->wq = alloc_ordered_workqueue("syno_wrapper", WQ_MEM_RECLAIM);
-	if (priv->wq == NULL) {
+	if (priv->wq == NULL)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	priv->wrapper_misc.minor = MISC_DYNAMIC_MINOR;
 	priv->wrapper_misc.name = "syno_wrapper";
