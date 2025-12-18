@@ -16,7 +16,7 @@ static int wrapper_uart_write(struct syno_wrapper *dev, const u8 *cmd) {
 
 	// Might want to comment out if the fan ctrl
 	// messages pollute this too much
-	printk(KERN_INFO "uart command: %s\n", cmdbuf);
+	pr_info("uart command: %s\n", cmdbuf);
 
     int err = serdev_device_write(uart->serdev, cmdbuf,
 		sizeof(cmdbuf), 0);
@@ -35,11 +35,11 @@ static const struct wrapper_phy_ops uart_ops = {
 
 static size_t wrapper_uart_receive(struct serdev_device *serdev, const u8 *buffer, size_t size)
 {
-	printk(KERN_INFO "serdev echo: received %ld bytes: ", size);
+	pr_info("serdev echo: received %ld bytes: ", size);
 	for (int i = 0; i < size; i++) {
-		printk(KERN_CONT "0x%02X ", buffer[i]);
+		pr_cont("0x%02X ", buffer[i]);
 	}
-	printk(KERN_CONT "\n");
+	pr_cont("\n");
 	return size;
 }
 
@@ -50,7 +50,7 @@ static const struct serdev_device_ops serdev_ops = {
 
 static int wrapper_uart_probe(struct serdev_device *serdev)
 {
-	printk(KERN_INFO "In probe for serdev\n");
+	pr_info("In probe for serdev\n");
 	struct syno_wrapper_uart *wrapper;
 	struct syno_wrapper *priv;
 
@@ -62,7 +62,7 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	int status = serdev_device_open(serdev);
 	if (status)
 	{
-		printk(KERN_INFO "serdev probe: error when opening serial device\n");
+		pr_info("serdev probe: error when opening serial device\n");
 		return -1;
 	}
 

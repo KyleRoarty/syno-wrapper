@@ -27,7 +27,7 @@ static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t 
 	struct uart_job *job;
 
 	if (count > SZ_UART_MAX_LENGTH+1) {
-		printk(KERN_INFO "Too much data - ignoring\n");
+		pr_info("Too much data - ignoring\n");
 		*ppos += count;
 		return count;
 	}
@@ -42,7 +42,7 @@ static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t 
 	}
 
 	job->cmdBuf[count] = '\0';
-	printk(KERN_INFO "Received: %s\n", job->cmdBuf);
+	pr_info("Received: %s\n", job->cmdBuf);
 
 	job->dev = priv;
 	INIT_WORK(&job->work, send_command);
@@ -88,7 +88,6 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	const struct wrapper_phy_ops *phy_ops,
 	struct device *dev)
 {
-	printk(KERN_INFO "Hello world 1.\n");
 	struct syno_wrapper *priv;
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
 	if (priv == NULL) {
@@ -152,7 +151,6 @@ void syno_wrapper_common_cleanup(struct syno_wrapper *priv)
 	//gpiod_put(power);
 	gpiod_remove_lookup_table(&apollolake_gpios_table);
 	kfree(priv);
-	printk(KERN_INFO "Goodbye world 1.\n");
 }
 EXPORT_SYMBOL_GPL(syno_wrapper_common_cleanup);
 
