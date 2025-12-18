@@ -14,6 +14,8 @@ static int wrapper_uart_write(struct syno_wrapper *dev, const u8 *cmd) {
 	// Could check for null here but yolo
 	snprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
 
+	// Might want to comment out if the fan ctrl
+	// messages pollute this too much
 	printk(KERN_INFO "uart command: %s\n", cmdbuf);
 
     int err = serdev_device_write(uart->serdev, cmdbuf,

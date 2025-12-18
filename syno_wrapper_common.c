@@ -14,7 +14,6 @@ struct uart_job {
 
 static void send_command(struct work_struct *work) {
 	struct uart_job *job = container_of(work, struct uart_job, work);
-	printk(KERN_INFO "In light state toggle\n");
 
 	int ret = job->dev->phy_ops->send_cmd(job->dev, job->cmdBuf);
 
@@ -59,6 +58,32 @@ static const struct file_operations wrapper_fops = {
 	.write = wrapper_write
 };
 
+static int write_fan(void *priv, const u8 fan_pct)
+{
+	struct syno_wrapper *this = (struct syno_wrapper *)priv;
+
+	if (fan_pct > 99)
+		return 1;
+
+	struct uart_job *job;
+	job = kmalloc(sizeof(*job), GFP_KERNEL);
+	if (!job)
+		return -ENOMEM;
+
+	// Should probably do error handling here oops
+	scnprintf(job->cmdBuf, sizeof(job->cmdBuf), "V%02u", fan_pct);
+	job->dev = this;
+
+	INIT_WORK(&job->work, send_command);
+	queue_work(this->wq, &job->work);
+
+	return 0;
+}
+
+static const struct fan_ctrl_ops wrapper_fc_ops = {
+	.write_fan_speed = write_fan
+};
+
 struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	const struct wrapper_phy_ops *phy_ops,
 	struct device *dev)
@@ -91,13 +116,22 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 		return ERR_PTR(result);
 	}
 
-	gpiod_add_lookup_table(&apollolake_gpios_table);
-
 	// Testing that CONFIG_XXX is tracked when building
 	// Doesn't do anything yet
-	enable_fanctrl();
+	struct fan_ctrl *wrapper_fc = fanctrl_create(
+		(void *)priv, &wrapper_fc_ops, &ds918_curve, "acpitz");
 
-	return priv;
+	if (wrapper_fc == NULL) {
+		misc_deregister(&priv->wrapper_misc);
+		destroy_workqueue(priv->wq);
+		kfree(priv);
+		return ERR_PTR(-ENOMEM);
+	}
+
+	priv->fc = wrapper_fc;
+	fanctrl_start(priv->fc);
+
+	gpiod_add_lookup_table(&apollolake_gpios_table);
 
 	//power = gpiod_get(NULL, "power-led", GPIOD_OUT_LOW);
 	//gpiod_set_value_cansleep(power, 0);
@@ -108,6 +142,8 @@ EXPORT_SYMBOL_GPL(syno_wrapper_common_init);
 
 void syno_wrapper_common_cleanup(struct syno_wrapper *priv)
 {
+	fanctrl_cleanup(priv->fc);
+
 	misc_deregister(&priv->wrapper_misc);
 
 	flush_workqueue(priv->wq);

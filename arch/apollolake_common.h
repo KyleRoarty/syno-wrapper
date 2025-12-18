@@ -86,3 +86,24 @@ static struct gpiod_lookup_table apollolake_gpios_table = {
         { },
     }
 };
+
+#include <linux/kernel.h>
+#include "include/fanctl.h"
+
+#if 1
+static const struct fan_point ds918_points[] = {
+    {40000, 20},
+    {65000, 50},
+    {80000, 99}
+};
+#else
+static const struct fan_point ds918_points[] = {
+    {10000, 20},
+    {40000, 99}
+};
+#endif
+
+static const struct fan_curve ds918_curve = {
+    .points = ds918_points,
+    .num_points = ARRAY_SIZE(ds918_points),
+};
