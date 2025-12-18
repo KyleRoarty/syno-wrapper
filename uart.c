@@ -3,14 +3,14 @@
 
 #include "include/syno_wrapper_common.h"
 
-struct syno_wrapper_uart {
+struct uart_ctrl {
 	struct serdev_device *serdev;
-	struct syno_wrapper *priv;
+	void *priv;
 };
 
-static int wrapper_uart_write(void *dev, const u8 *cmd)
+static int wrapper_uart_write(void *phy, const u8 *cmd)
 {
-	struct syno_wrapper_uart *uart = dev->phy;
+	struct uart_ctrl *uart = phy;
 	u8 cmdbuf[32] = {0};
 	// Could check for null here but yolo
 	scnprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
@@ -50,13 +50,13 @@ static const struct serdev_device_ops serdev_ops = {
 static int wrapper_uart_probe(struct serdev_device *serdev)
 {
 	pr_info("In probe for serdev\n");
-	struct syno_wrapper_uart *wrapper;
-	struct syno_wrapper *priv;
+	struct uart_ctrl *uart;
+	void *priv;
 
-	wrapper = kzalloc(sizeof(*wrapper), GFP_KERNEL);
+	uart = kzalloc(sizeof(*uart), GFP_KERNEL);
 
-	wrapper->serdev = serdev;
-	serdev_device_set_drvdata(serdev, wrapper);
+	uart->serdev = serdev;
+	serdev_device_set_drvdata(serdev, uart);
 	serdev_device_set_client_ops(serdev, &serdev_ops);
 	int status = serdev_device_open(serdev);
 	if (status)
@@ -69,15 +69,15 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
 	serdev_device_set_flow_control(serdev, false);
 
-	priv = syno_wrapper_common_init(wrapper,
-		&uart_ops, &wrapper->serdev->dev);
-	wrapper->priv = priv;
+	priv = syno_wrapper_common_init(uart,
+		&uart_ops, &uart->serdev->dev);
+	uart->priv = priv;
 	return 0;
 }
 
 static void wrapper_uart_remove(struct serdev_device *serdev)
 {
-	struct syno_wrapper_uart *uart = serdev_device_get_drvdata(serdev);
+	struct uart_ctrl *uart = serdev_device_get_drvdata(serdev);
 	syno_wrapper_common_cleanup(uart->priv);
 	serdev_device_close(serdev);
 	kfree(uart);

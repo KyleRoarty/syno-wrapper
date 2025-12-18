@@ -16,7 +16,7 @@ static void send_command(struct work_struct *work)
 {
 	struct uart_job *job = container_of(work, struct uart_job, work);
 
-	int ret = job->dev->phy_ops->send_cmd(job->dev, job->cmdBuf);
+	int ret = job->dev->phy_ops->send_cmd(job->dev->phy, job->cmdBuf);
 
 	kfree(job);
 }
