@@ -76,7 +76,7 @@ struct bp_ctrl *backplanectrl_create(struct device *dev, const char *sense_str,
 	if (IS_ERR(sense_array))
 		return ERR_CAST(sense_array);
 
-	power_array = devm_gpiod_get_array(dev, power_str, GPIOD_OUT_LOW);
+	power_array = devm_gpiod_get_array(dev, power_str, GPIOD_ASIS);
 	if (IS_ERR(power_array))
 		return ERR_CAST(power_array);
 
@@ -103,6 +103,19 @@ struct bp_ctrl *backplanectrl_create(struct device *dev, const char *sense_str,
 			continue;
 		if (ret)
 			return ERR_PTR(ret);
+	}
+
+	gpiod_get_array_value_cansleep(bp->nslots, bp->sense_pins->desc,
+				       bp->sense_pins->info, bp->prev_sense);
+
+	for (int i = 0; i < bp->nslots; i++) {
+		int ret = gpiod_direction_output(bp->power_pins->desc[i],
+						 test_bit(i, bp->prev_sense));
+		if (ret)
+			return ERR_PTR(ret);
+
+		pr_info("Initialized slot %d to %d\n", i,
+			test_bit(i, bp->prev_sense));
 	}
 
 	INIT_DELAYED_WORK(&bp->work, backplanectrl_work_fn);
