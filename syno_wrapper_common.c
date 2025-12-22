@@ -41,16 +41,18 @@ static void send_command(struct work_struct *work)
 	kfree(job);
 }
 
-static void turn_power_led_off(struct syno_wrapper *priv)
+static int send_command_wrapper(struct syno_wrapper *priv, const char *buf)
 {
 	struct uart_job *job;
 	job = kmalloc(sizeof(*job), GFP_KERNEL);
 	if (!job)
-		return;
-	scnprintf(job->cmdBuf, sizeof(job->cmdBuf), "%c", SZ_UART_PWR_LED_OFF);
+		return -ENOMEM;
+	scnprintf(job->cmdBuf, sizeof(job->cmdBuf), "%s", buf);
 	job->dev = priv;
 	INIT_WORK(&job->work, send_command);
 	queue_work(priv->wq, &job->work);
+
+	return 0;
 }
 
 static ssize_t wrapper_write(struct file *file, const char __user *buf,
@@ -58,7 +60,6 @@ static ssize_t wrapper_write(struct file *file, const char __user *buf,
 {
 	struct syno_wrapper *priv = container_of(
 		file->private_data, struct syno_wrapper, wrapper_misc);
-	struct uart_job *job;
 
 	if (count > SZ_UART_MAX_LENGTH + 1) {
 		pr_info("Too much data - ignoring\n");
@@ -66,20 +67,15 @@ static ssize_t wrapper_write(struct file *file, const char __user *buf,
 		return count;
 	}
 
-	job = kmalloc(sizeof(*job), GFP_KERNEL);
-	if (!job)
-		return -ENOMEM;
-
-	if (copy_from_user(job->cmdBuf, buf, count))
+	char cmdBuf[SZ_UART_MAX_LENGTH + 1];
+	if (copy_from_user(cmdBuf, buf, count))
 		return -EFAULT;
 
-	job->cmdBuf[count] = '\0';
-	pr_info("Received: %s\n", job->cmdBuf);
+	pr_info("Received: %s\n", cmdBuf);
 
-	job->dev = priv;
-	INIT_WORK(&job->work, send_command);
-
-	queue_work(priv->wq, &job->work);
+	int ret = send_command_wrapper(priv, cmdBuf);
+	if (ret)
+		return ret;
 
 	*ppos += count;
 	return count;
@@ -95,17 +91,15 @@ static int write_fan(void *priv, const u8 fan_pct)
 	if (fan_pct > 99)
 		return 1;
 
+	char cmdBuf[SZ_UART_MAX_LENGTH];
+	scnprintf(cmdBuf, sizeof(cmdBuf), "V%02u", fan_pct);
+
+	return send_command_wrapper(this, cmdBuf);
+
 	struct uart_job *job;
 	job = kmalloc(sizeof(*job), GFP_KERNEL);
 	if (!job)
 		return -ENOMEM;
-
-	// Should probably do error handling here oops
-	scnprintf(job->cmdBuf, sizeof(job->cmdBuf), "V%02u", fan_pct);
-	job->dev = this;
-
-	INIT_WORK(&job->work, send_command);
-	queue_work(this->wq, &job->work);
 
 	return 0;
 }
@@ -170,7 +164,10 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	priv->bp = wrapper_bp;
 	backplanectrl_start(priv->bp);
 
-	turn_power_led_off(priv);
+	char cmd = SZ_UART_PWR_LED_OFF;
+	send_command_wrapper(priv, &cmd);
+	cmd = SZ_UART_STATUS_LED_OFF;
+	send_command_wrapper(priv, &cmd);
 
 	return priv;
 
