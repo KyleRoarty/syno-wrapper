@@ -119,17 +119,22 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 			 struct device *dev)
 {
 	struct syno_wrapper *priv;
+	void *err;
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-	if (priv == NULL)
-		return ERR_PTR(-ENOMEM);
+	if (priv == NULL) {
+		err = ERR_PTR(-ENOMEM);
+		goto err0;
+	}
 
 	priv->dev = dev;
 	priv->phy = phy;
 	priv->phy_ops = phy_ops;
 
 	priv->wq = alloc_ordered_workqueue("syno_wrapper", WQ_MEM_RECLAIM);
-	if (priv->wq == NULL)
-		return ERR_PTR(-ENOMEM);
+	if (priv->wq == NULL) {
+		err = ERR_PTR(-ENOMEM);
+		goto err_free_wrapper;
+	}
 
 	priv->wrapper_misc.minor = MISC_DYNAMIC_MINOR;
 	priv->wrapper_misc.name = "syno_wrapper";
@@ -139,9 +144,8 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	int result;
 	result = misc_register(&priv->wrapper_misc);
 	if (result) {
-		destroy_workqueue(priv->wq);
-		kfree(priv);
-		return ERR_PTR(result);
+		err = ERR_PTR(result);
+		goto err_destroy_wq;
 	}
 
 	// Testing that CONFIG_XXX is tracked when building
@@ -149,13 +153,9 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	struct fan_ctrl *wrapper_fc = fanctrl_create(
 		(void *)priv, &wrapper_fc_ops, &ds918_curve, ds918_tz);
 
-	if (IS_ERR_OR_NULL(wrapper_fc)) {
-		misc_deregister(&priv->wrapper_misc);
-		destroy_workqueue(priv->wq);
-		kfree(priv);
-		if (!wrapper_fc)
-			return ERR_PTR(-ENOMEM);
-		return ERR_CAST(wrapper_fc);
+	if (IS_ERR(wrapper_fc)) {
+		err = ERR_CAST(wrapper_fc);
+		goto err_misc_dereg;
 	}
 
 	priv->fc = wrapper_fc;
@@ -165,16 +165,9 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	gpiod_add_lookup_table(&apollolake_gpios_table);
 	struct bp_ctrl *wrapper_bp =
 		backplanectrl_create(dev, "hdd-detect", "hdd-power");
-	if (IS_ERR_OR_NULL(wrapper_bp)) {
-		gpiod_remove_lookup_table(&apollolake_gpios_table);
-		fanctrl_cleanup(priv->fc);
-		misc_deregister(&priv->wrapper_misc);
-		destroy_workqueue(priv->wq);
-		kfree(priv);
-
-		if (!wrapper_bp)
-			return ERR_PTR(-ENOMEM);
-		return ERR_CAST(wrapper_bp);
+	if (IS_ERR(wrapper_bp)) {
+		err = ERR_CAST(wrapper_bp);
+		goto err_bp_init;
 	}
 
 	priv->bp = wrapper_bp;
@@ -183,22 +176,29 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	turn_power_led_off(priv);
 
 	return priv;
+
+err_bp_init:
+	gpiod_remove_lookup_table(&apollolake_gpios_table);
+	fanctrl_cleanup(priv->fc);
+err_misc_dereg:
+	misc_deregister(&priv->wrapper_misc);
+err_destroy_wq:
+	destroy_workqueue(priv->wq);
+err_free_wrapper:
+	kfree(priv);
+err0:
+	return err;
 }
 EXPORT_SYMBOL_GPL(syno_wrapper_common_init);
 
 void syno_wrapper_common_cleanup(struct syno_wrapper *priv)
 {
 	backplanectrl_cleanup(priv->bp);
-
+	gpiod_remove_lookup_table(&apollolake_gpios_table);
 	fanctrl_cleanup(priv->fc);
-
 	misc_deregister(&priv->wrapper_misc);
-
 	flush_workqueue(priv->wq);
 	destroy_workqueue(priv->wq);
-	//gpiod_set_value_cansleep(power, 1);
-	//gpiod_put(power);
-	gpiod_remove_lookup_table(&apollolake_gpios_table);
 	kfree(priv);
 }
 EXPORT_SYMBOL_GPL(syno_wrapper_common_cleanup);
