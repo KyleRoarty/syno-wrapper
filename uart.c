@@ -1,5 +1,15 @@
+#include <asm-generic/errno-base.h>
+#include <asm-generic/int-ll64.h>
+#include <linux/err.h>
+#include <linux/gfp_types.h>
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/printk.h>
 #include <linux/serdev.h>
-#include <linux/acpi.h>
+#include <linux/slab.h>
+#include <linux/sprintf.h>
+#include <linux/stddef.h>
+#include <linux/types.h>
 
 #include "include/syno_wrapper_common.h"
 
@@ -11,7 +21,7 @@ struct uart_ctrl {
 static int wrapper_uart_write(void *phy, const u8 *cmd)
 {
 	struct uart_ctrl *uart = phy;
-	u8 cmdbuf[32] = {0};
+	u8 cmdbuf[32] = { 0 };
 	// Could check for null here but yolo
 	scnprintf(cmdbuf, sizeof(cmdbuf), "%s", cmd);
 
@@ -19,8 +29,8 @@ static int wrapper_uart_write(void *phy, const u8 *cmd)
 	// messages pollute this too much
 	pr_info("uart command: %s\n", cmdbuf);
 
-    int err = serdev_device_write(uart->serdev, cmdbuf,
-		sizeof(cmdbuf), 0);
+	ssize_t err =
+		serdev_device_write(uart->serdev, cmdbuf, sizeof(cmdbuf), 0);
 	return err;
 	if (err < 0)
 		return err;
@@ -33,7 +43,8 @@ static const struct wrapper_phy_ops uart_ops = {
 	.send_cmd = wrapper_uart_write,
 };
 
-static size_t wrapper_uart_receive(struct serdev_device *serdev, const u8 *buffer, size_t size)
+static size_t wrapper_uart_receive(struct serdev_device *serdev,
+				   const u8 *buffer, size_t size)
 {
 	pr_info("serdev echo: received %ld bytes: ", size);
 	for (int i = 0; i < size; i++)
@@ -59,8 +70,7 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	serdev_device_set_drvdata(serdev, uart);
 	serdev_device_set_client_ops(serdev, &serdev_ops);
 	int status = serdev_device_open(serdev);
-	if (status)
-	{
+	if (status) {
 		pr_info("serdev probe: error when opening serial device\n");
 		return -1;
 	}
@@ -69,8 +79,14 @@ static int wrapper_uart_probe(struct serdev_device *serdev)
 	serdev_device_set_parity(serdev, SERDEV_PARITY_NONE);
 	serdev_device_set_flow_control(serdev, false);
 
-	priv = syno_wrapper_common_init(uart,
-		&uart_ops, &uart->serdev->dev);
+	priv = syno_wrapper_common_init(uart, &uart_ops, &uart->serdev->dev);
+	if (IS_ERR_OR_NULL(priv)) {
+		serdev_device_close(serdev);
+		kfree(uart);
+		if (!priv)
+			return -ENODEV;
+		return PTR_ERR(priv);
+	}
 	uart->priv = priv;
 	return 0;
 }
@@ -83,10 +99,7 @@ static void wrapper_uart_remove(struct serdev_device *serdev)
 	kfree(uart);
 }
 
-static const struct acpi_device_id uart_acpi_ids[] = {
-	{"TST0001", 0},
-	{}
-};
+static const struct acpi_device_id uart_acpi_ids[] = { { "TST0001", 0 }, {} };
 MODULE_DEVICE_TABLE(acpi, uart_acpi_ids);
 
 static struct serdev_device_driver uart_driver = {

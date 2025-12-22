@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _SYNO_WRAPPER_APOLLOLAKE_COMMON_H_
+#define _SYNO_WRAPPER_APOLLOLAKE_COMMON_H_
 /*
  * Apollo Lake has 4 GPIO controllers with different number of pins which are loosely arranged.
  * We hard-coded the base offsets of these controllers so the GPIO number can be determined at static time,
@@ -17,6 +18,12 @@
 // CPUFAN commands (X, Y) don't do anything as there's no CPU fan
 // 'M' doesn't do anything. It allegedly toggles which LED is being controlled
 // 'R' doesn't do anything. Allegedly "Get unique CMD"
+
+#include <linux/array_size.h>
+#include <linux/gpio/machine.h>
+#include <linux/stddef.h>
+
+#include "include/fanctl.h"
 
 #define SZ_UART_POWER_OFF                   0x31 // "1"
 #define SZ_UART_BUZZER_SHORT                0x32 // "2"
@@ -56,8 +63,6 @@
 #define SZ_UART_WOL_ENABLE                  0x6C // "l"
 #define SZ_UART_MAX_LENGTH                  4
 
-#include <linux/gpio/machine.h>
-
 static struct gpiod_lookup_table apollolake_gpios_table = {
     .dev_id = NULL,
     .table = {
@@ -87,9 +92,6 @@ static struct gpiod_lookup_table apollolake_gpios_table = {
     }
 };
 
-#include <linux/kernel.h>
-#include "include/fanctl.h"
-
 #if 1
 static const struct fan_point ds918_points[] = {
     {40000, 20},
@@ -109,3 +111,4 @@ static const struct fan_curve ds918_curve = {
 };
 
 static const char ds918_tz[] = "acpitz";
+#endif // _SYNO_WRAPPER_APOLLOLAKE_COMMON_H_

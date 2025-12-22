@@ -1,6 +1,24 @@
-#include <linux/module.h> /* Needed by all modules */
-#include <linux/kernel.h> /* Needed for KERN_INFO */
-#include <linux/gpio/consumer.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/int-ll64.h>
+#include <linux/compiler_types.h>
+#include <linux/container_of.h>
+#include <linux/err.h>
+#include <linux/export.h>
+#include <linux/fs.h>
+#include <linux/gfp_types.h>
+#include <linux/gpio/machine.h>
+#include <linux/init.h>
+#include <linux/miscdevice.h>
+#include <linux/module.h>
+#include <linux/device.h>
+#include <linux/printk.h>
+#include <linux/slab.h>
+#include <linux/sprintf.h>
+#include <linux/stddef.h>
+#include <linux/types.h>
+#include <linux/uaccess.h>
+#include <linux/workqueue.h>
+#include <linux/workqueue_types.h>
 
 #include "arch/apollolake_common.h"
 #include "include/syno_wrapper_common.h"
@@ -10,14 +28,15 @@
 struct uart_job {
 	struct work_struct work;
 	struct syno_wrapper *dev;
-	u8 cmdBuf[SZ_UART_MAX_LENGTH+1];
+	u8 cmdBuf[SZ_UART_MAX_LENGTH + 1];
 };
 
 static void send_command(struct work_struct *work)
 {
 	struct uart_job *job = container_of(work, struct uart_job, work);
 
-	int ret = job->dev->phy_ops->send_cmd(job->dev->phy, job->cmdBuf);
+	// Maybe do something with return value idk
+	job->dev->phy_ops->send_cmd(job->dev->phy, job->cmdBuf);
 
 	kfree(job);
 }
@@ -34,12 +53,15 @@ static void turn_power_led_off(struct syno_wrapper *priv)
 	queue_work(priv->wq, &job->work);
 }
 
+static ssize_t wrapper_write(struct file *file, const char __user *buf,
+			     size_t count, loff_t *ppos)
 {
 	// I think this is correct?
-	struct syno_wrapper *priv = container_of(file->private_data, struct syno_wrapper, wrapper_misc);
+	struct syno_wrapper *priv = container_of(
+		file->private_data, struct syno_wrapper, wrapper_misc);
 	struct uart_job *job;
 
-	if (count > SZ_UART_MAX_LENGTH+1) {
+	if (count > SZ_UART_MAX_LENGTH + 1) {
 		pr_info("Too much data - ignoring\n");
 		*ppos += count;
 		return count;
@@ -64,10 +86,8 @@ static void turn_power_led_off(struct syno_wrapper *priv)
 	return count;
 }
 
-static const struct file_operations wrapper_fops = {
-	.owner = THIS_MODULE,
-	.write = wrapper_write
-};
+static const struct file_operations wrapper_fops = { .owner = THIS_MODULE,
+						     .write = wrapper_write };
 
 static int write_fan(void *priv, const u8 fan_pct)
 {
@@ -91,13 +111,12 @@ static int write_fan(void *priv, const u8 fan_pct)
 	return 0;
 }
 
-static const struct fan_ctrl_ops wrapper_fc_ops = {
-	.write_fan_speed = write_fan
-};
+static const struct fan_ctrl_ops wrapper_fc_ops = { .write_fan_speed =
+							    write_fan };
 
-struct syno_wrapper *syno_wrapper_common_init(void *phy,
-	const struct wrapper_phy_ops *phy_ops,
-	struct device *dev)
+struct syno_wrapper *
+syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
+			 struct device *dev)
 {
 	struct syno_wrapper *priv;
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
@@ -130,11 +149,13 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	struct fan_ctrl *wrapper_fc = fanctrl_create(
 		(void *)priv, &wrapper_fc_ops, &ds918_curve, ds918_tz);
 
-	if (wrapper_fc == NULL) {
+	if (IS_ERR_OR_NULL(wrapper_fc)) {
 		misc_deregister(&priv->wrapper_misc);
 		destroy_workqueue(priv->wq);
 		kfree(priv);
-		return ERR_PTR(-ENOMEM);
+		if (!wrapper_fc)
+			return ERR_PTR(-ENOMEM);
+		return ERR_CAST(wrapper_fc);
 	}
 
 	priv->fc = wrapper_fc;
@@ -159,7 +180,7 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	priv->bp = wrapper_bp;
 	backplanectrl_start(priv->bp);
 
-turn_power_led_off(priv);
+	turn_power_led_off(priv);
 
 	return priv;
 }
