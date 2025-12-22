@@ -9,6 +9,7 @@
 #include <linux/bitmap.h>
 #include <linux/bitops.h>
 #include <linux/jiffies.h>
+#include <linux/module.h>
 #include <linux/printk.h>
 #include <linux/workqueue.h>
 #include <linux/types.h>
@@ -129,3 +130,5 @@ void backplanectrl_cleanup(struct bp_ctrl *bp)
 		return;
 	cancel_delayed_work_sync(&bp->work);
 }
+
+MODULE_SOFTDEP("post: ahci");
