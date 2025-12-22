@@ -1,0 +1,26 @@
+CompileFlags:
+    Remove:
+        - -mpreferred-stack-boundary=*
+        - -mindirect-branch=*
+        - -mindirect-branch-register
+        - -fno-allow-store-data-races
+        - -fmin-function-alignment=*
+        - -fconserve-stack
+        - -mrecord-mcount
+Index:
+    StandardLibrary: false
+Style:
+    AngledHeaders: ['linux/.*', 'asm.*/.*']
+Diagnostics:
+    UnusedIncludes: Strict
+    MissingIncludes: Strict
+    Includes:
+        AnalyzeAngledIncludes: true
+        IgnoreHeader: ['^stddef.h']
+    ClangTidy:
+        Add:
+            - linuxkernel-*
+            - performance-*
+            - clang-analyzer-*
+        Remove:
+            - performance-no-int-to-ptr

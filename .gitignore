@@ -5,3 +5,4 @@ kmod.code-workspace
 .config
 include/config/*
 include/generated/*
+.cache/
