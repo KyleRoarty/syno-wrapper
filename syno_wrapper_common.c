@@ -22,7 +22,18 @@ static void send_command(struct work_struct *work)
 	kfree(job);
 }
 
-static ssize_t wrapper_write(struct file * file, const char __user *buf, size_t count, loff_t * ppos)
+static void turn_power_led_off(struct syno_wrapper *priv)
+{
+	struct uart_job *job;
+	job = kmalloc(sizeof(*job), GFP_KERNEL);
+	if (!job)
+		return;
+	scnprintf(job->cmdBuf, sizeof(job->cmdBuf), "%c", SZ_UART_PWR_LED_OFF);
+	job->dev = priv;
+	INIT_WORK(&job->work, send_command);
+	queue_work(priv->wq, &job->work);
+}
+
 {
 	// I think this is correct?
 	struct syno_wrapper *priv = container_of(file->private_data, struct syno_wrapper, wrapper_misc);
@@ -148,6 +159,7 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	priv->bp = wrapper_bp;
 	backplanectrl_start(priv->bp);
 
+turn_power_led_off(priv);
 
 	return priv;
 }
