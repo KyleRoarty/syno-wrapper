@@ -75,18 +75,18 @@ static struct gpiod_lookup_table apollolake_gpios_table = {
         GPIO_LOOKUP_IDX("INT3452:00", 10, "usb-power", 1, GPIO_ACTIVE_HIGH),
         GPIO_LOOKUP_IDX("INT3452:00", 13, "usb-power", 2, GPIO_ACTIVE_HIGH),
 
-        GPIO_LOOKUP_IDX("INT3452:00", 21, "hdd-power", 1, GPIO_ACTIVE_HIGH),
-        GPIO_LOOKUP_IDX("INT3452:00", 20, "hdd-power", 2, GPIO_ACTIVE_HIGH),
-        GPIO_LOOKUP_IDX("INT3452:00", 19, "hdd-power", 3, GPIO_ACTIVE_HIGH),
-        GPIO_LOOKUP_IDX("INT3452:00",  9, "hdd-power", 4, GPIO_ACTIVE_HIGH),
+        GPIO_LOOKUP_IDX("INT3452:00", 21, "hdd-power", 0, GPIO_ACTIVE_HIGH),
+        GPIO_LOOKUP_IDX("INT3452:00", 20, "hdd-power", 1, GPIO_ACTIVE_HIGH),
+        GPIO_LOOKUP_IDX("INT3452:00", 19, "hdd-power", 2, GPIO_ACTIVE_HIGH),
+        GPIO_LOOKUP_IDX("INT3452:00",  9, "hdd-power", 3, GPIO_ACTIVE_HIGH),
 
-        GPIO_LOOKUP_IDX("INT3452:00", 18, "hdd-detect", 1, GPIO_ACTIVE_LOW),
-        GPIO_LOOKUP_IDX("INT3452:02", 24, "hdd-detect", 2, GPIO_ACTIVE_LOW),
-        GPIO_LOOKUP_IDX("INT3452:02", 21, "hdd-detect", 3, GPIO_ACTIVE_LOW),
-        GPIO_LOOKUP_IDX("INT3452:02", 20, "hdd-detect", 4, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:00", 18, "hdd-detect", 0, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:02", 24, "hdd-detect", 1, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:02", 21, "hdd-detect", 2, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:02", 20, "hdd-detect", 3, GPIO_ACTIVE_LOW),
 
-        GPIO_LOOKUP_IDX("INT3452:00", 17, "fan-sense", 1, GPIO_ACTIVE_LOW),
-        GPIO_LOOKUP_IDX("INT3452:00", 16, "fan-sense", 2, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:00", 17, "fan-sense", 0, GPIO_ACTIVE_LOW),
+        GPIO_LOOKUP_IDX("INT3452:00", 16, "fan-sense", 1, GPIO_ACTIVE_LOW),
 
         { },
     }
