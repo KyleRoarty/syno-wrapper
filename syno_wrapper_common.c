@@ -4,6 +4,7 @@
 
 #include "arch/apollolake_common.h"
 #include "include/syno_wrapper_common.h"
+#include "include/backplanectrl.h"
 #include "include/fanctl.h"
 
 struct uart_job {
@@ -128,10 +129,25 @@ struct syno_wrapper *syno_wrapper_common_init(void *phy,
 	priv->fc = wrapper_fc;
 	fanctrl_start(priv->fc);
 
+	apollolake_gpios_table.dev_id = dev_name(dev);
 	gpiod_add_lookup_table(&apollolake_gpios_table);
+	struct bp_ctrl *wrapper_bp =
+		backplanectrl_create(dev, "hdd-detect", "hdd-power");
+	if (IS_ERR_OR_NULL(wrapper_bp)) {
+		gpiod_remove_lookup_table(&apollolake_gpios_table);
+		fanctrl_cleanup(priv->fc);
+		misc_deregister(&priv->wrapper_misc);
+		destroy_workqueue(priv->wq);
+		kfree(priv);
 
-	//power = gpiod_get(NULL, "power-led", GPIOD_OUT_LOW);
-	//gpiod_set_value_cansleep(power, 0);
+		if (!wrapper_bp)
+			return ERR_PTR(-ENOMEM);
+		return ERR_CAST(wrapper_bp);
+	}
+
+	priv->bp = wrapper_bp;
+	backplanectrl_start(priv->bp);
+
 
 	return priv;
 }
@@ -139,6 +155,8 @@ EXPORT_SYMBOL_GPL(syno_wrapper_common_init);
 
 void syno_wrapper_common_cleanup(struct syno_wrapper *priv)
 {
+	backplanectrl_cleanup(priv->bp);
+
 	fanctrl_cleanup(priv->fc);
 
 	misc_deregister(&priv->wrapper_misc);

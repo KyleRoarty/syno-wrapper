@@ -24,3 +24,10 @@ config SYNO_WRAPPER_FANCTL
 
         Fan curve is currently hard-coded and uses
         the acpi temp sensor, not the core package temp.
+
+config SYNO_WRAPPER_BACKPLANECTRL
+    tristate "Backplane controller for Synology devices.
+    depends on SYNO_WRAPPER
+    help
+        Enabled backplane control to turn on/off drives.
+        Also controls drive activity LEDs.

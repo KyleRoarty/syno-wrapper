@@ -15,6 +15,7 @@ ccflags-y += -include $(src)/include/generated/autoconf.h
 syno_wrapper-y := syno_wrapper_common.o
 syno_wrapper-$(CONFIG_SYNO_WRAPPER_UART) += uart.o
 syno_wrapper-$(CONFIG_SYNO_WRAPPER_FANCTL) += fanctl.o
+syno_wrapper-$(CONFIG_SYNO_WRAPPER_BACKPLANECTRL) += backplanectrl.o
 
 obj-m += syno_wrapper.o
 
