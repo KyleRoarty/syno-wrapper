@@ -56,7 +56,6 @@ static void turn_power_led_off(struct syno_wrapper *priv)
 static ssize_t wrapper_write(struct file *file, const char __user *buf,
 			     size_t count, loff_t *ppos)
 {
-	// I think this is correct?
 	struct syno_wrapper *priv = container_of(
 		file->private_data, struct syno_wrapper, wrapper_misc);
 	struct uart_job *job;
@@ -148,8 +147,6 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 		goto err_destroy_wq;
 	}
 
-	// Testing that CONFIG_XXX is tracked when building
-	// Doesn't do anything yet
 	struct fan_ctrl *wrapper_fc = fanctrl_create(
 		(void *)priv, &wrapper_fc_ops, &ds918_curve, ds918_tz);
 
