@@ -168,6 +168,10 @@ syno_wrapper_common_init(void *phy, const struct wrapper_phy_ops *phy_ops,
 	send_command_wrapper(priv, &cmd);
 	cmd = SZ_UART_STATUS_LED_OFF;
 	send_command_wrapper(priv, &cmd);
+	cmd = SZ_UART_DISABLE_SCHEDULE_POWERON;
+	send_command_wrapper(priv, &cmd);
+	cmd = SZ_UART_RCPOWEROFF;
+	send_command_wrapper(priv, &cmd);
 
 	return priv;
 
