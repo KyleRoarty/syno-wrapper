@@ -16,6 +16,16 @@ Note: Things have only been tested on the DS918+
 - Has a backplane controller that can be compiled in/out
 - Controls the backplane slot power, turning it on when a drive is in and off when no drive is in
 
+## Building on Synology box
+
+```
+kconfig-mconf Kconfig
+mkdir -p include/generated
+mkdir -p include/config
+kconfig-conf --silentoldconfig Kconfig
+KDIR=/lib/modules/$(uname -r)/build make
+```
+
 ## Installing on Synology Box
 
 ```
