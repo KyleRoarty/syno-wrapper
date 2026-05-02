@@ -32,4 +32,6 @@ KDIR=/lib/modules/$(uname -r)/build make
 sudo install -D -m 0644 syno_wrapper.ko /lib/modules/$(uname -r)/custom/syno_wrapper.ko
 sudo depmod -a
 sudo update-initramfs -u -k $(uname -r)
+# Update GRUB_DEFAULT in /etc/default/grub with the string from the "Advanced options" menu entry for the kernel you're using
+sudo update-grub
 ```
